@@ -1,12 +1,12 @@
 package com.sevengods.transaction_alert_system.controller;
 
 import com.sevengods.transaction_alert_system.dto.TransactionRequest;
-import com.fintech.transaction_alert_system.model.Transaction;
+import com.sevengods.transaction_alert_system.model.Transaction;
+import com.sevengods.transaction_alert_system.repository.TransactionRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,8 +15,12 @@ import java.util.UUID;
 @CrossOrigin(origins = "*") // Allows the frontend to communicate with this API
 public class TransactionController {
 
-    private final List<Transaction> transactionLog = new ArrayList<>();
+    private final TransactionRepository repository;
     private static final BigDecimal FLAG_THRESHOLD = new BigDecimal("10000.00");
+
+    public TransactionController(TransactionRepository repository) {
+        this.repository = repository;
+    }
 
     @PostMapping
     public ResponseEntity<Transaction> processTransaction(@RequestBody TransactionRequest request) {
@@ -31,12 +35,12 @@ public class TransactionController {
                 LocalDateTime.now()
         );
 
-        transactionLog.addFirst(newTransaction); // Add to beginning of list
-        return ResponseEntity.ok(newTransaction);
+        Transaction savedTransaction = repository.save(newTransaction);
+        return ResponseEntity.ok(savedTransaction);
     }
 
     @GetMapping
     public ResponseEntity<List<Transaction>> getAllTransactions() {
-        return ResponseEntity.ok(transactionLog);
+        return ResponseEntity.ok(repository.findAll());
     }
 }
