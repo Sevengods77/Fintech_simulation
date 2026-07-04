@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Alert System</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        input { padding: 8px; width: 100%; box-sizing: border-box; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .log-item { padding: 10px; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ddd; }
+        .fraud { background-color: #ffe6e6; border-color: #ffcccc; color: #cc0000; }
+        .approved { background-color: #e6ffe6; border-color: #ccffcc; color: #006600; }
+    </style>
+</head>
+<body>
+
+<h2>Process Transaction</h2>
+<form id="transactionForm">
+    <div class="form-group">
+        <input type="text" id="accountId" placeholder="Account ID (e.g., ACC123)" required>
+    </div>
+    <div class="form-group">
+        <input type="number" id="amount" step="0.01" placeholder="Amount" required>
+    </div>
+    <div class="form-group">
+        <input type="text" id="currency" placeholder="Currency (e.g., INR)" value="INR" required>
+    </div>
+    <button type="submit">Submit Transaction</button>
+</form>
+
+<h2>Transaction Log</h2>
+<div id="transactionsList"></div>
+
+<script>
+    const form = document.getElementById('transactionForm');
+    const list = document.getElementById('transactionsList');
+
+    async function fetchTransactions() {
+        const response = await fetch('http://localhost:8080/api/v1/transactions');
+        const data = await response.json();
+
+        list.innerHTML = data.map(txn => `
+                <div class="log-item ${txn.fraudulent ? 'fraud' : 'approved'}">
+                    <strong>Account:</strong> ${txn.accountId} |
+                    <strong>Amount:</strong> ${txn.amount} ${txn.currency} <br>
+                    <strong>Status:</strong> ${txn.status} |
+                    <strong>Alert:</strong> ${txn.fraudulent ? 'SUSPICIOUS' : 'NORMAL'}
+                </div>
+            `).join('');
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            accountId: document.getElementById('accountId').value,
+            amount: document.getElementById('amount').value,
+            currency: document.getElementById('currency').value
+        };
+
+        await fetch('http://localhost:8080/api/v1/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        form.reset();
+        fetchTransactions();
+    });
+
+    // Load initially
+    fetchTransactions();
+</script>
+</body>
+</html>
